@@ -41,6 +41,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Show error message in the UI
+  function showError(message) {
+    const errorView = document.createElement('div');
+    errorView.className = 'error-message';
+    errorView.innerHTML = `
+      <h2>Error</h2>
+      <p>${message}</p>
+      <div class="error-actions">
+        <button class="secondary-button" onclick="window.location.href='options.html'">Open Settings</button>
+        <button class="primary-button" onclick="location.reload()">Try Again</button>
+      </div>
+    `;
+    
+    // Insert error view after the current view
+    const currentView = Array.from(document.querySelectorAll('.container > div'))
+      .find(div => !div.classList.contains('hidden'));
+    if (currentView) {
+      currentView.insertAdjacentElement('afterend', errorView);
+      currentView.classList.add('hidden');
+    }
+  }
+
   // Start the issue reporting process
   async function startReporting() {
     showView('collecting');
@@ -87,13 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
           showView('suggestions');
         } else {
           console.error('Error processing issue:', response.error);
-          showView('submit');
+          showError(response.error || 'An error occurred while processing the issue');
         }
       });
 
     } catch (error) {
       console.error('Error collecting information:', error);
-      showView('submit');
+      showError('Failed to collect page information. Please try again.');
     }
   }
 
@@ -160,4 +182,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize popup
   showView('initial');
+
+  // Add CSS for error message
+  const style = document.createElement('style');
+  style.textContent = `
+    .error-message {
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 4px;
+      background-color: #FFEBEE;
+      color: #C62828;
+    }
+
+    .error-message h2 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+
+    .error-message p {
+      margin: 0 0 16px 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .error-actions button {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+  `;
+  document.head.appendChild(style);
 }); 

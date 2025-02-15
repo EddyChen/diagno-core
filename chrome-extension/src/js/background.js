@@ -1,8 +1,8 @@
 // Configuration object that can be updated through extension options
 let config = {
   services: {
-    ocr: 'http://localhost:11434/v1',
-    analysis: 'http://localhost:11434/v1',
+    ocr: 'http://he808v7amke.sn.mynetname.net:28919/api',
+    analysis: 'http://he808v7amke.sn.mynetname.net:28919/api',
     report: 'http://localhost/issue/report'
   },
   ollama: {
@@ -133,27 +133,60 @@ async function processScreenshot(screenshot) {
   try {
     Logger.info('Processing screenshot with OCR service');
     
-    const response = await fetch(config.services.ocr + '/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: config.ollama.ocrModel,
-        prompt: "Please analyze this screenshot and describe any visible issues or error messages. Extract all text that might be relevant to understanding the problem.",
-        images: [screenshot]
-      })
-    });
-
-    if (!response.ok) {
-      const error = `OCR service returned ${response.status}`;
-      Logger.error(error);
-      throw new Error(error);
+    // Check if service endpoint is configured
+    if (!config.services.ocr) {
+      throw new Error('OCR service endpoint not configured. Please check extension settings.');
     }
 
-    const data = await response.json();
-    Logger.debug('OCR processing complete', { text: data.response.substring(0, 200) + '...' });
-    return data.response;
+    const endpoint = config.services.ocr + '/generate';
+    Logger.debug('Sending request to OCR service', { endpoint });
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: config.ollama.ocrModel,
+          prompt: "Please analyze this screenshot and describe any visible issues or error messages. Extract all text that might be relevant to understanding the problem.",
+          images: [screenshot]
+        })
+      });
+
+      if (!response.ok) {
+        let errorMessage = `OCR service returned ${response.status}`;
+        
+        // Add more context based on status code
+        switch (response.status) {
+          case 404:
+            errorMessage = 'OCR service not found. Please ensure Ollama is running and the endpoint is correct in extension settings.';
+            break;
+          case 500:
+            errorMessage = 'OCR service encountered an internal error. Please check Ollama logs.';
+            break;
+          case 503:
+            errorMessage = 'OCR service is unavailable. Please ensure Ollama is running.';
+            break;
+        }
+
+        Logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      if (!data.response) {
+        throw new Error('Invalid response from OCR service: missing response field');
+      }
+
+      Logger.debug('OCR processing complete', { text: data.response.substring(0, 200) + '...' });
+      return data.response;
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Could not connect to OCR service. Please ensure Ollama is running and accessible.');
+      }
+      throw error;
+    }
   } catch (error) {
     Logger.error('Error processing screenshot', error);
     throw error;
