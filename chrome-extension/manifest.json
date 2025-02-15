@@ -11,8 +11,12 @@
     "system.display"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "http://he808v7amke.sn.mynetname.net:28919/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://he808v7amke.sn.mynetname.net:28919"
+  },
   "action": {
     "default_popup": "src/pages/popup.html",
     "default_icon": {

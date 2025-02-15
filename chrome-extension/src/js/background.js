@@ -145,12 +145,22 @@ async function processScreenshot(screenshot) {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': chrome.runtime.getURL(''),
+          'Access-Control-Allow-Origin': '*'
         },
+        mode: 'cors',
+        credentials: 'omit',
         body: JSON.stringify({
           model: config.ollama.ocrModel,
           prompt: "Please analyze this screenshot and describe any visible issues or error messages. Extract all text that might be relevant to understanding the problem.",
-          images: [screenshot]
+          stream: false,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9
+          },
+          images: [screenshot.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')]
         })
       });
 
@@ -229,12 +239,21 @@ Please provide 3-5 specific suggestions to resolve the issue. Format each sugges
     const response = await fetch(config.services.analysis + '/generate', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Origin': chrome.runtime.getURL(''),
+        'Access-Control-Allow-Origin': '*'
       },
+      mode: 'cors',
+      credentials: 'omit',
       body: JSON.stringify({
         model: config.ollama.analysisModel,
         prompt: prompt,
-        stream: false
+        stream: false,
+        options: {
+          temperature: 0.7,
+          top_p: 0.9
+        }
       })
     });
 
