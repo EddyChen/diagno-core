@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Web App Issue Reporter</title>
+  <link rel="stylesheet" href="../css/popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Issue Reporter</h1>
+      <a href="history.html" target="_blank" class="history-link">View History</a>
+    </div>
+    
+    <div id="initial-view">
+      <p>Having issues with this page? Let us help you!</p>
+      <button id="start-report" class="primary-button">Report Issue</button>
+    </div>
+
+    <div id="collecting-view" class="hidden">
+      <p>Collecting information...</p>
+      <div class="progress-bar">
+        <div class="progress"></div>
+      </div>
+    </div>
+
+    <div id="suggestions-view" class="hidden">
+      <h2>Suggested Solutions</h2>
+      <div id="suggestions-list"></div>
+      <div class="buttons-container">
+        <button id="issue-resolved" class="success-button">Issue Resolved</button>
+        <button id="submit-issue" class="secondary-button">Submit Issue</button>
+      </div>
+    </div>
+
+    <div id="submit-view" class="hidden">
+      <h2>Submit Issue Report</h2>
+      <form id="issue-form">
+        <div class="form-group">
+          <label for="issue-description">Additional Details:</label>
+          <textarea id="issue-description" rows="4" placeholder="Please provide any additional information about the issue..."></textarea>
+        </div>
+        <button type="submit" class="primary-button">Submit Report</button>
+      </form>
+    </div>
+
+    <div id="success-view" class="hidden">
+      <h2>Thank You!</h2>
+      <p>Your issue has been successfully reported.</p>
+      <button id="close-popup" class="primary-button">Close</button>
+    </div>
+  </div>
+  <script src="../js/popup.js"></script>
+</body>
+</html> 

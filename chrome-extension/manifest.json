@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Web App Issue Reporter",
+  "version": "1.0.0",
+  "description": "Help users report and resolve issues encountered while using web applications",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "cookies",
+    "system.display"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "src/pages/popup.html",
+    "default_icon": {
+      "16": "src/images/icon16.png",
+      "48": "src/images/icon48.png",
+      "128": "src/images/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/js/content.js"],
+      "css": ["src/css/content.css"]
+    }
+  ],
+  "icons": {
+    "16": "src/images/icon16.png",
+    "48": "src/images/icon48.png",
+    "128": "src/images/icon128.png"
+  },
+  "options_page": "src/pages/options.html",
+  "chrome_url_overrides": {
+    "history": "src/pages/history.html"
+  }
+} 

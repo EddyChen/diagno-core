@@ -1,0 +1,17 @@
+[Cursor] Initial commit: Chrome extension for web app issue reporting
+
+This commit includes:
+- Basic extension structure with popup, options, and history pages
+- Background service worker for issue processing
+- Content script for page interaction
+- Test suite setup with Jest
+- Icon generation script
+- Comprehensive documentation
+
+Features:
+- One-click issue reporting
+- Automatic screenshot capture
+- OCR text extraction
+- AI-powered issue analysis
+- Issue history management
+- Configurable backend services 

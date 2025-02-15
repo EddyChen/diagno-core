@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#2196F3"/>
+  
+  <!-- Question mark -->
+  <path d="M64 32c-8.84 0-16 7.16-16 16h8c0-4.42 3.58-8 8-8s8 3.58 8 8c0 2.21-0.89 4.21-2.34 5.66l-9.66 9.66C56.89 67.21 56 69.21 56 71.42V80h8v-8.58l8.32-8.32C75.11 60.21 76 58.21 76 56c0-8.84-7.16-16-16-16z" fill="white"/>
+  
+  <!-- Dot -->
+  <circle cx="64" cy="88" r="4" fill="white"/>
+  
+  <!-- Magnifying glass -->
+  <g transform="translate(64, 64) rotate(-45) translate(-64, -64)">
+    <circle cx="64" cy="64" r="24" fill="none" stroke="white" stroke-width="8"/>
+    <line x1="82" y1="82" x2="96" y2="96" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg> 

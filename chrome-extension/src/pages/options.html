@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Web App Issue Reporter Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #666;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #2196F3;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .save-button {
+      background-color: #2196F3;
+      color: white;
+    }
+
+    .save-button:hover {
+      background-color: #1976D2;
+    }
+
+    .reset-button {
+      background-color: #757575;
+      color: white;
+    }
+
+    .reset-button:hover {
+      background-color: #616161;
+    }
+
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .status.success {
+      background-color: #E8F5E9;
+      color: #2E7D32;
+      display: block;
+    }
+
+    .status.error {
+      background-color: #FFEBEE;
+      color: #C62828;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Web App Issue Reporter Settings</h1>
+    
+    <div class="section">
+      <h2>Service Endpoints</h2>
+      <div class="form-group">
+        <label for="ocr-endpoint">OCR Service URL:</label>
+        <input type="text" id="ocr-endpoint" placeholder="http://localhost:11434/v1">
+      </div>
+      <div class="form-group">
+        <label for="analysis-endpoint">Analysis Service URL:</label>
+        <input type="text" id="analysis-endpoint" placeholder="http://localhost:11434/v1">
+      </div>
+      <div class="form-group">
+        <label for="report-endpoint">Report Service URL:</label>
+        <input type="text" id="report-endpoint" placeholder="http://localhost/issue/report">
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Ollama Models</h2>
+      <div class="form-group">
+        <label for="ocr-model">OCR Model:</label>
+        <input type="text" id="ocr-model" placeholder="minicpm-v:8b">
+      </div>
+      <div class="form-group">
+        <label for="analysis-model">Analysis Model:</label>
+        <input type="text" id="analysis-model" placeholder="deepseek-r1:7b">
+      </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div class="button-container">
+      <button id="reset" class="reset-button">Reset to Defaults</button>
+      <button id="save" class="save-button">Save Settings</button>
+    </div>
+  </div>
+
+  <script src="../js/options.js"></script>
+</body>
+</html> 
