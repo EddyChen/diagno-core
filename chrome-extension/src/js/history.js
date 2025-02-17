@@ -63,8 +63,8 @@ function displayIssues(issuesToDisplay) {
     <tr>
       <td>${issue.id}</td>
       <td>
-        <div>${issue.pageInfo.title}</div>
-        <div style="color: #666; font-size: 12px;">${issue.pageInfo.url}</div>
+        <div>${issue.pageInfo?.title || 'N/A'}</div>
+        <div style="color: #666; font-size: 12px;">${issue.pageInfo?.url || 'N/A'}</div>
       </td>
       <td>
         <span class="status-badge status-${issue.status}">
@@ -78,7 +78,7 @@ function displayIssues(issuesToDisplay) {
         </div>
       </td>
       <td>
-        <button class="details-button" onclick="showIssueDetails('${issue.id}')">
+        <button class="details-button" data-issue-id="${issue.id}">
           View Details
         </button>
       </td>
@@ -89,47 +89,63 @@ function displayIssues(issuesToDisplay) {
 // Show issue details in modal
 function showIssueDetails(issueId) {
   const issue = issues.find(i => i.id === issueId);
-  if (!issue) return;
+  if (!issue) {
+    Logger.error(`Issue not found: ${issueId}`);
+    return;
+  }
   
-  elements.issueDetails.innerHTML = `
-    <div class="detail-section">
-      <h3>Page Information</h3>
-      <div class="detail-content">
-Title: ${issue.pageInfo.title}
-URL: ${issue.pageInfo.url}
+  try {
+    elements.issueDetails.innerHTML = `
+      <div class="detail-section">
+        <h3>Page Information</h3>
+        <div class="detail-content">
+Title: ${issue.pageInfo?.title || 'N/A'}
+URL: ${issue.pageInfo?.url || 'N/A'}
 Timestamp: ${new Date(issue.timestamp).toLocaleString()}
+        </div>
       </div>
-    </div>
 
-    <div class="detail-section">
-      <h3>System Information</h3>
-      <div class="detail-content">
-Platform: ${issue.systemInfo.platform}
-Browser: ${issue.systemInfo.userAgent}
-Language: ${issue.systemInfo.language}
-Screen Resolution: ${issue.systemInfo.screenResolution}
+      <div class="detail-section">
+        <h3>System Information</h3>
+        <div class="detail-content">
+Platform: ${issue.systemInfo?.platform || 'N/A'}
+Browser: ${issue.systemInfo?.userAgent || 'N/A'}
+Language: ${issue.systemInfo?.language || 'N/A'}
+Screen Resolution: ${issue.systemInfo?.screenResolution || 'N/A'}
+        </div>
       </div>
-    </div>
 
-    <div class="detail-section">
-      <h3>OCR Text</h3>
-      <div class="detail-content">${issue.ocrText}</div>
-    </div>
+      <div class="detail-section">
+        <h3>OCR Text</h3>
+        <div class="detail-content">${issue.ocrText || 'No OCR text available'}</div>
+      </div>
 
-    ${issue.additionalDetails ? `
-    <div class="detail-section">
-      <h3>Additional Details</h3>
-      <div class="detail-content">${issue.additionalDetails}</div>
-    </div>
-    ` : ''}
+      ${issue.additionalDetails ? `
+      <div class="detail-section">
+        <h3>Additional Details</h3>
+        <div class="detail-content">${issue.additionalDetails}</div>
+      </div>
+      ` : ''}
 
-    <div class="detail-section">
-      <h3>Screenshot</h3>
-      <img src="${issue.screenshot}" alt="Issue Screenshot" class="screenshot">
-    </div>
-  `;
-  
-  elements.modal.classList.add('show');
+      ${issue.screenshot ? `
+      <div class="detail-section">
+        <h3>Screenshot</h3>
+        <img src="${issue.screenshot}" alt="Issue Screenshot" class="screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <div class="error-message" style="display: none;">Screenshot not available</div>
+      </div>
+      ` : ''}
+    `;
+    
+    elements.modal.classList.add('show');
+  } catch (error) {
+    console.error('Error showing issue details:', error);
+    elements.issueDetails.innerHTML = `
+      <div class="error-message">
+        <h3>Error</h3>
+        <p>Failed to display issue details. Please try again.</p>
+      </div>
+    `;
+  }
 }
 
 // Close modal
@@ -144,21 +160,31 @@ function showError(message) {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', loadIssues);
+document.addEventListener('DOMContentLoaded', () => {
+  loadIssues();
 
-elements.searchInput.addEventListener('input', filterAndDisplayIssues);
-elements.statusFilter.addEventListener('change', filterAndDisplayIssues);
-elements.modalClose.addEventListener('click', closeModal);
+  // Add event delegation for details buttons
+  elements.issuesList.addEventListener('click', (e) => {
+    const detailsButton = e.target.closest('.details-button');
+    if (detailsButton) {
+      const issueId = detailsButton.dataset.issueId;
+      if (issueId) {
+        showIssueDetails(issueId);
+      }
+    }
+  });
 
-// Close modal when clicking outside
-elements.modal.addEventListener('click', (e) => {
-  if (e.target === elements.modal) {
-    closeModal();
-  }
+  elements.searchInput.addEventListener('input', filterAndDisplayIssues);
+  elements.statusFilter.addEventListener('change', filterAndDisplayIssues);
+  elements.modalClose.addEventListener('click', closeModal);
+
+  // Close modal when clicking outside
+  elements.modal.addEventListener('click', (e) => {
+    if (e.target === elements.modal) {
+      closeModal();
+    }
+  });
 });
-
-// Make showIssueDetails available globally for the onclick handlers
-window.showIssueDetails = showIssueDetails;
 
 // Refresh issues periodically (every 30 seconds)
 setInterval(loadIssues, 30000); 

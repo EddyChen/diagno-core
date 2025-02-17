@@ -14,4 +14,27 @@ Features:
 - OCR text extraction
 - AI-powered issue analysis
 - Issue history management
-- Configurable backend services 
+- Configurable backend services
+
+[Cursor] Fix history view and CSP compliance
+
+Changes made:
+1. Fixed history view functionality:
+   - Improved error handling in issue details display
+   - Added null checks with optional chaining
+   - Added fallback values for missing data
+
+2. Improved CSP compliance:
+   - Removed inline event handlers
+   - Implemented event delegation for details buttons
+   - Removed global function exposure
+
+3. Enhanced error handling:
+   - Added better error messages
+   - Improved screenshot error handling
+   - Added logging for debugging
+
+4. Code quality improvements:
+   - Better data validation
+   - More consistent error handling
+   - Cleaner event listener organization 

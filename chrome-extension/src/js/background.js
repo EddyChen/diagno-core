@@ -7,7 +7,7 @@ let config = {
   },
   ollama: {
     ocrModel: 'minicpm-v:8b',
-    analysisModel: 'deepseek-r1:7b'
+    analysisModel: 'deepseek-r1:32b'
   }
 };
 
@@ -146,9 +146,7 @@ async function processScreenshot(screenshot) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': chrome.runtime.getURL(''),
-          'Access-Control-Allow-Origin': '*'
+          'Accept': 'application/json'
         },
         mode: 'cors',
         credentials: 'omit',
@@ -240,9 +238,7 @@ Please provide 3-5 specific suggestions to resolve the issue. Format each sugges
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': chrome.runtime.getURL(''),
-        'Access-Control-Allow-Origin': '*'
+        'Accept': 'application/json'
       },
       mode: 'cors',
       credentials: 'omit',
@@ -267,12 +263,25 @@ Please provide 3-5 specific suggestions to resolve the issue. Format each sugges
     Logger.debug('Analysis complete', { response: data.response });
     
     try {
-      const suggestions = JSON.parse(data.response.replace(/```json\n?|\n?```/g, ''));
-      return Array.isArray(suggestions) ? suggestions : [{ text: data.response, confidence: 0.7 }];
+      // Remove <think> tags and any other XML-like tags
+      const cleanedResponse = data.response.replace(/<[^>]*>/g, '');
+      // Try to extract JSON from the response
+      const jsonMatch = cleanedResponse.match(/\[.*\]/s) || cleanedResponse.match(/\{.*\}/s);
+      
+      if (jsonMatch) {
+        const suggestions = JSON.parse(jsonMatch[0]);
+        return Array.isArray(suggestions) ? suggestions : [{ text: cleanedResponse, confidence: 0.7 }];
+      } else {
+        Logger.warn('No JSON found in response, using raw response');
+        return [{
+          text: cleanedResponse,
+          confidence: 0.7
+        }];
+      }
     } catch (e) {
-      Logger.warn('Failed to parse JSON response, using raw response', e);
+      Logger.warn('Failed to parse response, using cleaned response', e);
       return [{
-        text: data.response,
+        text: data.response.replace(/<[^>]*>/g, '').trim(),
         confidence: 0.7
       }];
     }
