@@ -1,5 +1,5 @@
 // Default configuration
-export const DEFAULT_CONFIG = {
+const DEFAULT_CONFIG = {
   services: {
     ollama: {
       baseUrl: 'http://he808v7amke.sn.mynetname.net:28919',
@@ -22,7 +22,11 @@ export const DEFAULT_CONFIG = {
       temperature: 0.7,
       top_p: 0.9,
       stream: false,
-      timeout: 60000 // 60 seconds timeout
+      timeouts: {
+        ocr: 180000,     // 3 minutes for OCR
+        analysis: 600000, // 10 minutes for analysis
+        request: 30000   // 30 seconds for regular requests
+      }
     }
   },
   storage: {
@@ -139,4 +143,5 @@ class ConfigManager {
   }
 }
 
+// Export a singleton instance
 export const configManager = new ConfigManager(); 

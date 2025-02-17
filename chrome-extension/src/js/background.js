@@ -1,15 +1,5 @@
-// Configuration object that can be updated through extension options
-let config = {
-  services: {
-    ocr: 'http://he808v7amke.sn.mynetname.net:28919/api',
-    analysis: 'http://he808v7amke.sn.mynetname.net:28919/api',
-    report: 'http://localhost/issue/report'
-  },
-  ollama: {
-    ocrModel: 'minicpm-v:8b',
-    analysisModel: 'deepseek-r1:32b'
-  }
-};
+// Import configuration manager
+import { configManager } from './config.js';
 
 // Store collected information temporarily
 let currentIssue = null;
@@ -121,12 +111,14 @@ const IssueManager = {
 };
 
 // Load configuration from storage
-chrome.storage.local.get(['config'], result => {
-  if (result.config) {
-    config = { ...config, ...result.config };
-    Logger.info('Configuration loaded from storage', config);
+(async () => {
+  try {
+    await configManager.load();
+    Logger.info('Configuration loaded', configManager.config);
+  } catch (error) {
+    Logger.error('Error loading configuration', error);
   }
-});
+})();
 
 // Process screenshot through OCR service
 async function processScreenshot(screenshot) {
@@ -134,15 +126,15 @@ async function processScreenshot(screenshot) {
     Logger.info('Processing screenshot with OCR service');
     
     // Check if service endpoint is configured
-    if (!config.services.ocr) {
+    const ocrUrl = configManager.getServiceUrl('ocr');
+    if (!ocrUrl) {
       throw new Error('OCR service endpoint not configured. Please check extension settings.');
     }
 
-    const endpoint = config.services.ocr + '/generate';
-    Logger.debug('Sending request to OCR service', { endpoint });
+    Logger.debug('Sending request to OCR service', { endpoint: ocrUrl });
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(ocrUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,12 +143,12 @@ async function processScreenshot(screenshot) {
         mode: 'cors',
         credentials: 'omit',
         body: JSON.stringify({
-          model: config.ollama.ocrModel,
+          model: configManager.get('ollama.models.ocr'),
           prompt: "Please analyze this screenshot and describe any visible issues or error messages. Extract all text that might be relevant to understanding the problem.",
-          stream: false,
+          stream: configManager.get('ollama.options.stream'),
           options: {
-            temperature: 0.7,
-            top_p: 0.9
+            temperature: configManager.get('ollama.options.temperature'),
+            top_p: configManager.get('ollama.options.top_p')
           },
           images: [screenshot.replace(/^data:image\/(png|jpg|jpeg);base64,/, '')]
         })
@@ -234,7 +226,12 @@ System Info:
 
 Please provide 3-5 specific suggestions to resolve the issue. Format each suggestion as a JSON object with 'text' and 'confidence' properties.`;
 
-    const response = await fetch(config.services.analysis + '/generate', {
+    const analysisUrl = configManager.getServiceUrl('analysis');
+    if (!analysisUrl) {
+      throw new Error('Analysis service endpoint not configured. Please check extension settings.');
+    }
+
+    const response = await fetch(analysisUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -243,12 +240,12 @@ Please provide 3-5 specific suggestions to resolve the issue. Format each sugges
       mode: 'cors',
       credentials: 'omit',
       body: JSON.stringify({
-        model: config.ollama.analysisModel,
+        model: configManager.get('ollama.models.analysis'),
         prompt: prompt,
-        stream: false,
+        stream: configManager.get('ollama.options.stream'),
         options: {
-          temperature: 0.7,
-          top_p: 0.9
+          temperature: configManager.get('ollama.options.temperature'),
+          top_p: configManager.get('ollama.options.top_p')
         }
       })
     });
@@ -325,9 +322,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           
           // Get system information
           const systemInfo = await getSystemInfo();
+          Logger.debug('System information collected', systemInfo);
           
-          // Process screenshot through OCR
-          const ocrText = await processScreenshot(request.data.screenshot);
+          // Process screenshot through OCR with timeout
+          Logger.info('Starting OCR processing');
+          const ocrPromise = processScreenshot(request.data.screenshot);
+          const ocrTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('OCR processing timeout - The OCR service is taking too long to process the image. Please try again or check if the Ollama service is running properly.')), 
+              configManager.get('ollama.options.timeouts.ocr'))
+          );
+          
+          let ocrText;
+          try {
+            ocrText = await Promise.race([ocrPromise, ocrTimeout]);
+            Logger.debug('OCR processing complete', { textLength: ocrText?.length });
+          } catch (error) {
+            Logger.error('OCR processing failed', error);
+            throw error;
+          }
           
           // Combine all information
           currentIssue = {
@@ -336,14 +348,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             ocrText
           };
           
-          // Get suggestions
-          const suggestions = await analyzeIssue(currentIssue);
+          // Get suggestions with timeout
+          Logger.info('Starting issue analysis');
+          const analysisPromise = analyzeIssue(currentIssue);
+          const analysisTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Analysis processing timeout - The analysis is taking longer than expected. This might be due to the complexity of the issue or high server load. Please try again in a few minutes.')), 
+              configManager.get('ollama.options.timeouts.analysis'))
+          );
+          
+          let suggestions;
+          try {
+            suggestions = await Promise.race([analysisPromise, analysisTimeout]);
+            Logger.debug('Issue analysis complete', { suggestionsCount: suggestions?.length });
+          } catch (error) {
+            Logger.error('Analysis processing failed', error);
+            throw error;
+          }
           
           Logger.info('Issue processing complete');
           sendResponse({ success: true, suggestions });
         } catch (error) {
           Logger.error('Error processing issue', error);
-          sendResponse({ success: false, error: error.message });
+          sendResponse({ 
+            success: false, 
+            error: error.message,
+            stage: error.message.includes('OCR') ? 'ocr' : 
+                   error.message.includes('Analysis') ? 'analysis' : 'unknown'
+          });
         }
       })();
       return true;

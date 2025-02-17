@@ -1,4 +1,10 @@
-document.addEventListener('DOMContentLoaded', () => {
+// Import configuration manager
+import { configManager } from './config.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load configuration
+  await configManager.load();
+
   // Get DOM elements
   const views = {
     initial: document.getElementById('initial-view'),
@@ -66,12 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Start the issue reporting process
   async function startReporting() {
     showView('collecting');
+    let hasError = false;
     
     try {
       // Get current tab information
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
-      updateProgress(20);
+      updateProgress(10);
 
       // Collect page information
       const pageInfo = {
@@ -80,42 +87,70 @@ document.addEventListener('DOMContentLoaded', () => {
         timestamp: new Date().toISOString()
       };
 
-      updateProgress(40);
+      updateProgress(20);
 
       // Get cookies
       const cookies = await chrome.cookies.getAll({ url: pageInfo.url });
       
-      updateProgress(60);
+      updateProgress(30);
 
       // Capture screenshot
       const screenshot = await chrome.tabs.captureVisibleTab();
       
-      updateProgress(80);
+      updateProgress(40);
 
       // Send message to background script to process information
-      chrome.runtime.sendMessage({
-        action: 'processIssue',
-        data: {
-          pageInfo,
-          cookies,
-          screenshot
-        }
-      }, response => {
-        updateProgress(100);
-        
-        if (response.success) {
-          // Display suggestions
-          displaySuggestions(response.suggestions);
-          showView('suggestions');
-        } else {
-          console.error('Error processing issue:', response.error);
-          showError(response.error || 'An error occurred while processing the issue');
-        }
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          action: 'processIssue',
+          data: {
+            pageInfo,
+            cookies,
+            screenshot
+          }
+        }, response => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          resolve(response);
+        });
+
+        // Set a timeout for the entire operation
+        // Use the analysis timeout as it's the longest operation
+        setTimeout(() => {
+          reject(new Error('The operation timed out. This might be due to server load or network issues. Please try again in a few minutes.'));
+        }, configManager.get('ollama.options.timeouts.analysis') + 30000); // Add 30 seconds buffer
       });
+
+      if (response.success) {
+        updateProgress(100);
+        // Display suggestions
+        displaySuggestions(response.suggestions);
+        showView('suggestions');
+      } else {
+        hasError = true;
+        let errorMessage = response.error || 'An error occurred while processing the issue';
+        
+        // Add more context based on the stage where error occurred
+        if (response.stage === 'ocr') {
+          errorMessage = 'Error processing image: ' + errorMessage;
+          updateProgress(60);
+        } else if (response.stage === 'analysis') {
+          errorMessage = 'Error analyzing issue: ' + errorMessage;
+          updateProgress(80);
+        }
+        
+        throw new Error(errorMessage);
+      }
 
     } catch (error) {
       console.error('Error collecting information:', error);
-      showError('Failed to collect page information. Please try again.');
+      if (!hasError) {
+        updateProgress(50); // If error happened before backend processing
+      }
+      showError(error.message || 'Failed to collect page information. Please try again.');
+      setTimeout(() => showView('initial'), 3000);
     }
   }
 
