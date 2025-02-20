@@ -1,37 +1,45 @@
 // Listen for messages from the extension
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   switch (request.action) {
     case 'getPageMetadata':
-      const metadata = {
+      var metadata = {
         // Get meta tags
-        meta: Array.from(document.getElementsByTagName('meta')).map(meta => ({
-          name: meta.getAttribute('name'),
-          content: meta.getAttribute('content')
-        })),
+        meta: Array.prototype.slice.call(document.getElementsByTagName('meta')).map(function(meta) {
+          return {
+            name: meta.getAttribute('name'),
+            content: meta.getAttribute('content')
+          };
+        }),
         
         // Get page structure info
         structure: {
-          headings: Array.from(document.querySelectorAll('h1, h2, h3')).map(h => ({
-            level: h.tagName.toLowerCase(),
-            text: h.textContent.trim()
-          })),
-          forms: Array.from(document.forms).map(form => ({
-            id: form.id,
-            action: form.action,
-            method: form.method
-          }))
+          headings: Array.prototype.slice.call(document.querySelectorAll('h1, h2, h3')).map(function(h) {
+            return {
+              level: h.tagName.toLowerCase(),
+              text: h.textContent.trim()
+            };
+          }),
+          forms: Array.prototype.slice.call(document.forms).map(function(form) {
+            return {
+              id: form.id,
+              action: form.action,
+              method: form.method
+            };
+          })
         },
         
         // Get any error messages visible on the page
-        errors: Array.from(document.querySelectorAll('.error, .alert, [role="alert"]')).map(el => ({
-          text: el.textContent.trim(),
-          class: el.className
-        })),
+        errors: Array.prototype.slice.call(document.querySelectorAll('.error, .alert, [role="alert"]')).map(function(el) {
+          return {
+            text: el.textContent.trim(),
+            class: el.className
+          };
+        }),
         
         // Get current scroll position
         viewport: {
-          scrollX: window.scrollX,
-          scrollY: window.scrollY,
+          scrollX: window.pageXOffset || document.documentElement.scrollLeft,
+          scrollY: window.pageYOffset || document.documentElement.scrollTop,
           innerWidth: window.innerWidth,
           innerHeight: window.innerHeight
         }
@@ -42,16 +50,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     case 'getConsoleErrors':
       // Create a proxy to capture console errors
-      const originalConsoleError = console.error;
-      const errors = [];
+      var originalConsoleError = console.error;
+      var errors = [];
       
-      console.error = (...args) => {
-        errors.push(args.map(arg => String(arg)).join(' '));
+      console.error = function() {
+        var args = Array.prototype.slice.call(arguments);
+        errors.push(args.map(function(arg) { return String(arg); }).join(' '));
         originalConsoleError.apply(console, args);
       };
       
       // Restore original console.error after a short delay
-      setTimeout(() => {
+      setTimeout(function() {
         console.error = originalConsoleError;
         sendResponse({ success: true, data: errors });
       }, 1000);
@@ -60,14 +69,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     case 'highlightElement':
       try {
-        const { selector } = request;
-        const element = document.querySelector(selector);
+        var selector = request.selector;
+        var element = document.querySelector(selector);
         
         if (element) {
           // Store original styles
-          const originalOutline = element.style.outline;
-          const originalPosition = element.style.position;
-          const originalZIndex = element.style.zIndex;
+          var originalOutline = element.style.outline;
+          var originalPosition = element.style.position;
+          var originalZIndex = element.style.zIndex;
           
           // Apply highlight
           element.style.outline = '2px solid red';
@@ -75,7 +84,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           element.style.zIndex = '10000';
           
           // Remove highlight after 3 seconds
-          setTimeout(() => {
+          setTimeout(function() {
             element.style.outline = originalOutline;
             element.style.position = originalPosition;
             element.style.zIndex = originalZIndex;

